@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<!------------------- ビデオチャット -------------------->
+<head>
+    <title>WebRTC 1 to 1 signaling</title>
+    <script type="text/javascript" src="./js/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
+</head>
+        
+<body>
+ <br>
+ <br>
+<table>
+    <tr>
+        <td>
+            <!-- ToDo: この辺のCSSを別ファイルに分けたい -->
+            <div id="infobox" style="border-style: dashed;border-width: 1px;width: 800px;border-color: #000;font-size: 28px;"></div>
+            <div id="time" style="border-style: dashed;border-width: 1px;width: 800px;border-color: #000;font-size: 28px;"></div>
+         <!--   <video id="video" autoplay width="800" height="600"></video><br /> -->
+ <div>
+<video id="remote-video" autoplay style="width: 800px; height: 600px; border: solid 10px black;"></video>
+</div>
+
+            <canvas id="canvas" width="800" height="600" style="display: none;"></canvas>
+        </td>
+        <td>
+            <div style="border-style: dashed;border-width: 1px;width: 100%;height: 700px;border-color: #000;font-size: 28px;overflow-y: scroll;">
+                <table id="msgbox" style="border-style: dashed;border-width: 1px;font-size: 28px;"></table>
+            </div>
+        </td>
+    </tr>
+</table>
+
+
+<textarea id="text-for-send-sdp" rows="5" cols="100" disabled="1" style="display:none;">SDP to send</textarea>
+<textarea id="text-for-send-ice" rows="5" cols="100" disabled="1" style="display:none;">ICE Candidate to send</textarea>
+
+<script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
+
+<script>
+
+// ゲーム時間の記録変数
+var gameTime = "";
+var competIo	= io.connect("http://"+location.host.split(":")[0]+":3002");		// 競技情報（時間など）
+
+var video = document.getElementById('video');
+var localMediaStream = null;
+
+var chatSocket = io.connect("http://"+location.host.split(":")[0]+":8082");
+
+/* ---- */
+
+chatSocket.on("guide", function (data) {
+	console.log(data);
+
+    $('#msgbox').prepend($('<tr>').html("<td style='vertical-align: top !important'>"+gameTime+"</td><td>"+data.msg+"</td>").css('color',data.color));
+});
+
+chatSocket.on("info", function (data) {
+	console.log(data);
+    document.getElementById("infobox").innerHTML=data['大会名']+"<br>"+data['チーム名']+" 現在の得点"+data['合計']+"点";
+});
+
+competIo.on("time", function (data) {
+    document.getElementById("time").innerHTML="競技時間 "+data.time;
+    gameTime=data.time;
+});
+
+
+chatSocket.on("clear", function (data) {
+   $('#msgbox tr').remove();
+});
+
+
+  var remoteVideo = document.getElementById('remote-video');
+  var localStream = null;
+  var peerConnection = null;
+  var peerStarted = false;
+  var mediaConstraints = {'mandatory': {'OfferToReceiveAudio':false, 'OfferToReceiveVideo':true }};
+
+	// Socket.IO Server(シグナリングサーバ)に接続する
+	var	socket = io.connect("http://"+location.host.split(":")[0]+":9001");
+  
+  // create socket
+  var socketReady = false;
+  var port = 9001;
+  
+  // socket: channel connected
+  socket.on('connect', onOpened)
+        .on('message', onMessage);
+
+  function onOpened(evt) {
+    console.log('socket opened.');
+    socketReady = true;
+  }
+
+  // socket: accept connection request
+  function onMessage(evt) {
+    if (evt.type === 'offer') {
+      console.log("Received offer, set offer, sending answer....")
+      onOffer(evt);
+    } else if (evt.type === 'answer' && peerStarted) {
+      console.log('Received answer, settinng answer SDP');
+	  onAnswer(evt);
+    } else if (evt.type === 'candidate' && peerStarted) {
+      console.log('Received ICE candidate...');
+	  onCandidate(evt);
+    } else if (evt.type === 'user dissconnected' && peerStarted) {
+      console.log("disconnected");
+    }
+  }
+  
+  // ----------------- handshake --------------
+  var textForSendSDP = document.getElementById('text-for-send-sdp');
+  var textForSendICE = document.getElementById('text-for-send-ice');
+  var textToReceiveSDP = document.getElementById('text-for-receive-sdp');
+  var textToReceiveICE = document.getElementById('text-for-receive-ice');
+  var iceSeparator = '------ ICE Candidate -------';
+  var CR = String.fromCharCode(13);
+  
+  function onSDP() {
+    var text = textToReceiveSDP.value;
+	var evt = JSON.parse(text);
+	if (peerConnection) {
+	  onAnswer(evt);
+	}
+	else {
+	  onOffer(evt);
+	}
+	
+	textToReceiveSDP.value ="";
+  }  
+  
+  //--- multi ICE candidate ---
+  function onICE() {
+    var text = textToReceiveICE.value;
+	var arr = text.split(iceSeparator);
+	for (var i = 1, len = arr.length; i < len; i++) {
+      var evt = JSON.parse(arr[i]);
+	  onCandidate(evt);
+    }
+
+	textToReceiveICE.value ="";
+  }
+  
+  
+  function onOffer(evt) {
+    console.log("Received offer...")
+	console.log(evt);
+    setOffer(evt);
+	sendAnswer(evt);
+	peerStarted = true;  // ++
+  }
+  
+  function onAnswer(evt) {
+    console.log("Received Answer...")
+	console.log(evt);
+	setAnswer(evt);
+  }
+  
+  function onCandidate(evt) {
+    var candidate = new RTCIceCandidate({sdpMLineIndex:evt.sdpMLineIndex, sdpMid:evt.sdpMid, candidate:evt.candidate});
+    console.log("Received Candidate...")
+	console.log(candidate);
+    peerConnection.addIceCandidate(candidate);
+  }
+
+  function sendSDP(sdp) {
+    var text = JSON.stringify(sdp);
+	console.log("---sending sdp text ---");
+	console.log(text);
+	textForSendSDP.value = text;
+	
+	// send via socket
+	socket.json.send(sdp);
+  }
+  
+  function sendCandidate(candidate) {
+    var text = JSON.stringify(candidate);
+	console.log("---sending candidate text ---");
+	console.log(text);
+	textForSendICE.value = (textForSendICE.value + CR + iceSeparator + CR + text + CR);
+	textForSendICE.scrollTop = textForSendICE.scrollHeight;
+	
+	// send via socket
+	socket.json.send(candidate);
+  }
+
+
+  // ---------------------- connection handling -----------------------
+  function prepareNewConnection() {
+    var pc_config = {"iceServers":[]};
+    var peer = null;
+    try {
+      peer = new webkitRTCPeerConnection(pc_config);
+    } catch (e) {
+      console.log("Failed to create peerConnection, exception: " + e.message);
+    }
+
+    // send any ice candidates to the other peer
+    peer.onicecandidate = function (evt) {
+      if (evt.candidate) {
+        console.log(evt.candidate);
+        sendCandidate({type: "candidate", 
+                          sdpMLineIndex: evt.candidate.sdpMLineIndex,
+                          sdpMid: evt.candidate.sdpMid,
+                          candidate: evt.candidate.candidate}
+		);
+      } else {
+        console.log("End of candidates. ------------------- phase=" + evt.eventPhase);
+      }
+    };
+
+    console.log('Adding local stream...');
+
+
+    peer.addEventListener("addstream", onRemoteStreamAdded, false);
+    peer.addEventListener("removestream", onRemoteStreamRemoved, false)
+
+    // when remote adds a stream, hand it on to the local video element
+    function onRemoteStreamAdded(event) {
+      console.log("Added remote stream");
+      remoteVideo.src = window.webkitURL.createObjectURL(event.stream);
+    }
+
+    // when remote removes a stream, remove it from the local video element
+    function onRemoteStreamRemoved(event) {
+      console.log("Remove remote stream");
+      remoteVideo.src = "";
+    }
+
+    return peer;
+  }
+
+
+// いらないこ
+  function sendOffer() {
+    peerConnection = prepareNewConnection();
+    peerConnection.createOffer(function (sessionDescription) { // in case of success
+      peerConnection.setLocalDescription(sessionDescription);
+      console.log("Sending: SDP");
+      console.log(sessionDescription);
+      sendSDP(sessionDescription);
+    }, function () { // in case of error
+      console.log("Create Offer failed");
+    }, mediaConstraints);
+  }
+
+  function setOffer(evt) {
+    if (peerConnection) {
+	  console.error('peerConnection alreay exist!');
+	}
+    peerConnection = prepareNewConnection();
+    peerConnection.setRemoteDescription(new RTCSessionDescription(evt));
+  }
+  
+  function sendAnswer(evt) {
+    console.log('sending Answer. Creating remote session description...' );
+	if (! peerConnection) {
+	  console.error('peerConnection NOT exist!');
+	  return;
+	}
+	
+    peerConnection.createAnswer(function (sessionDescription) { // in case of success
+      peerConnection.setLocalDescription(sessionDescription);
+      console.log("Sending: SDP");
+      console.log(sessionDescription);
+      sendSDP(sessionDescription);
+    }, function () { // in case of error
+      console.log("Create Answer failed");
+    }, mediaConstraints);
+  }
+
+  function setAnswer(evt) {
+    if (! peerConnection) {
+	  console.error('peerConnection NOT exist!');
+	  return;
+	}
+	peerConnection.setRemoteDescription(new RTCSessionDescription(evt));
+  }
+
+  </script>
+  
+<style>
+
+	.btns {
+ 		top: 20px;
+		display:inline-block;
+		font-size: 120%;
+		width: 80px;
+		height: 50px;
+	}
+
+</style>
+</body>
+</html>

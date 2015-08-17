@@ -1,0 +1,29 @@
+{
+  "name": "robocup-jr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "body-parser": "^1.14.2",
+    "express": "^4.13.3",
+    "mysql": "^2.10.2",
+    "nodemon": "^1.4.1",
+    "socket.io": "1.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^1.10.3"
+  },
+  "scripts": {
+    "test": "eslint .",
+    "start": "nodemon server.js",
+    "devapi": "nodemon api.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/ht12a092/robocup-jr.git"
+  },
+  "author": "",
+  "license": "",
+  "private": true,
+  "homepage": "https://bitbucket.org/ht12a092/robocup-jr"
+}
