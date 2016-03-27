@@ -3,6 +3,7 @@ SCORERとは，ロボカップジュニア　レスキューチャレンジの�
 現在，主にSCORERはレスキューメイズで利用をしています．  
 レスキューメイズは迷路抜けという競技の特性上，観客席からは見えづらいです．
 
+![cimg0099](https://cloud.githubusercontent.com/assets/11460169/14066038/e6b950cc-f47a-11e5-8f9f-d87cfce0da87.jpg)
 
 
 ## ご案内
