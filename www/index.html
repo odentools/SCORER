@@ -3,7 +3,10 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<meta http-equiv="Content-Style-Type" content="text/css">
-    <meta name="viewport" content="width=860, user-scalable=no">
+
+	<!-- タブレット画面に対応して設定を行う -->
+    <meta name="viewport" content="width=950, user-scalable=no">
+
 	<title>RoboCup Jr. SCORER</title>
 
     <link type="text/css" rel="stylesheet" href="./css/jquery-ui.css">
@@ -23,6 +26,7 @@
 
 // サーバーのホストアドレスを取得する
 var SERVER_ADDRESS = location.host.split(":")[0];
+
 
 // 各種情報(チーム情報など)
 var infoIo = io.connect("http://"+SERVER_ADDRESS+":3001");
@@ -109,15 +113,15 @@ $(document).ready(function() {
 
 <!-- ヘッダー -->
 <div id="headerArea">
-	<table class="table footerTable">
+	<table class="table colors">
 		<tbody>
 		<tr>
-            <td class="headerTd">
+            <td>
 				<select id="tournamentName" class="form-control">
 					<option>大会名</option>
 				</select>
 			</td>
-            <td class="headerTd">
+            <td>
 				<select id="teamName" class="form-control">
 					<option>チーム名</option>
 				</select>
@@ -136,11 +140,11 @@ $(document).ready(function() {
 
 <!-- フッター -->
 <div id="footerArea">
-	<table class="table footerTable">
+	<table class="table colors">
 		<tbody>
 		<tr>
-            <td class="footerTd"><span class="logo">RoboCup Jr. SCORER, by Visual Media Labo. </span></td>
-            <td class="footerTd" style="text-align: right;"><span id="playTime">00:00:00</span></td>
+            <td class="italic">RoboCup Jr. SCORER, by Visual Media Labo.</td>
+            <td id="playTime" class="timer">00:00</td><!-- id -->
         </tr>
     	</tbody>
 	</table>

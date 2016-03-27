@@ -1,0 +1,25 @@
+@charset "UTF-8";
+
+.btn {
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-bottom: 1px;
+	margin-top: 1px; 	
+}
+
+table.inner,
+table.inner tr,
+table.inner td {
+	background-color: rgba(255,255,255,0) !important;
+	border-left-width: 0px !important;
+	vertical-align: middle !important;
+}
+
+table.inner {
+	margin-left: auto;
+    margin-right: auto;
+}
+
+table.inner td {
+    padding: 0px !important;
+}

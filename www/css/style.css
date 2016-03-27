@@ -1,0 +1,76 @@
+body {
+    background: #eeeeee;
+    width: 100%;
+}
+
+/*タブメニュー*/
+.tabs {
+    position: relative;
+    padding: 0;
+}
+.tabs li {
+    list-style: none;
+    display: inline-block;
+}
+.tabs input[type=radio] {
+    display: none;
+}
+.tabs label {
+    display: block;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 20px;
+    background-color: #cccccc;
+    color: #ffffff;
+}
+.tabs label:hover {
+    background-color: #cccccc;
+    color: #000000;
+}
+.tabs input[type=radio]:checked + label {
+    background-color: #ffffff;
+    color: #000000;
+}
+.tabs .contents {
+    display: none;
+    position: absolute;
+    top:30px;
+    left: 0;
+    padding: 10px;
+    background: #ffffff;
+}
+.tabs input[type=radio]:checked + label + .contents{
+    display: block;
+}
+
+/*テーブル*/
+table.type08 {
+	border-collapse: collapse;
+	text-align: left;
+	line-height: 1.5;
+	border-left: 1px solid #ccc;
+}
+table.myTable thead th {
+	padding: 10px;
+	font-weight: bold;
+	border-top: 1px solid #ccc;
+	border-right: 1px solid #ccc;
+	border-bottom: 2px solid #55e5f4;
+	background: #dcdcd1;
+}
+table.type08 tbody th {
+	width: 150px;
+	padding: 10px;
+	font-weight: bold;
+	vertical-align: top;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+	background: #ececec;
+}
+table.type08 td {
+	width: 350px;
+	padding: 10px;
+	vertical-align: top;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+}

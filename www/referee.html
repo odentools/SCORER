@@ -9,6 +9,7 @@
     <link type="text/css" rel="stylesheet" href="./css/jquery-ui.css">
 	<link type="text/css" rel="stylesheet" href="./css/skyblue.min.css">
 	<link type="text/css" rel="stylesheet" href="./css/common.css">
+	<link rel="stylesheet" type="text/css" href="./css/referee.css">
 
     <script type="text/javascript" src="./js/jquery-2.1.3.min.js"></script>
     <script type="text/javascript" src="./js/jquery-ui.min.js"></script>
@@ -20,14 +21,13 @@
 <body>
 
 <script type="text/javascript">
-// ゲーム時間の記録変数
-var gameCountTime=0;
 
-// インターバル変数
-var timeInterval;
+var gameCountTime=0;	// ゲーム時間の記録変数
+var timeInterval;		// インターバル変数
+var endStatus;			// 終了状態の記録変数
 
-// 終了状態の記録変数
-var endStatus;
+
+/* ---- */
 
 
 /**
@@ -45,13 +45,13 @@ var setCarry00 = function(c) {
 /**
  * 経過時間をフォーマットする
  */
-var getHmsTime = function(sec) {
+var getMsTime = function(sec) {
 
 	var h = parseInt(sec/3600);
 	var m = parseInt((sec-=(h*3600))/60);
 	var s = parseInt(sec-=(m*60));
 
-	return setCarry00(h)+':'+setCarry00(m)+':'+setCarry00(s);
+	return setCarry00(m)+':'+setCarry00(s);
 };
 
 
@@ -59,10 +59,10 @@ var getHmsTime = function(sec) {
  * ゲームの経過時刻を描画する
  */
 var viewNowSec = function() {
-    $('#playTime', parent.document).text(getHmsTime(gameCountTime));
+    $('#playTime', parent.document).text(getMsTime(gameCountTime));
 
     // ToDo: 複数での審判に備えてチーム名を付随させる。
-    competIo.emit("time", {time: getHmsTime(gameCountTime)});
+    competIo.emit("time", {time: (gameCountTime)});
 
     gameCountTime++;
 };
@@ -79,8 +79,21 @@ $(document).ready(function() {
     $('.btn').on('click', function() {
         
         switch($(this).data('btn')) {
+			case 'remove':
+				guideSocket.emit("remove");
+				break;
+			case 'save':
+				scoaArray['チーム名']='[*]'+scoaArray['チーム名'];
+				chatSocket.emit("endGame", scoaArray);//ファイルへ書き出ししてる。
+				guideSocket.emit("info", {'大会名':scoaArray['大会名'], 'チーム名':scoaArray['チーム名'], 'field':scoaArray['field'],'合計':scoaArray['合計']});
+				guideSocket.emit("exit");
+				break;
+			case 'clearMonitor':
+				guideSocket.emit("start");
+				break;
             case 'retireButton':    // リタイアボタン
             case 'exitButton':      // 終了ボタン
+            case 'completeButton':  // 脱出成功
                 endStatus = $(this).data('btn');
                 $('#exitPanel').dialog('open');
             break;
@@ -97,6 +110,50 @@ $(document).ready(function() {
                 
                 // サーバとの通信処理
                 // スコアのやりとり
+
+console.log(endStatus);
+console.log(scoaArray);
+
+// 特例処理
+// リアイアビリティボーナス
+
+var sumElem = document.getElementById("sum");
+
+if(endStatus == 'retireButton'|| endStatus == 'exitButton' || endStatus == 'completeButton') {
+	console.log(scoaArray);
+	// スコアをガイドとして表示
+	guideSocket.emit("endguide", {msg:"合計: "+scoaArray["合計"], color:'black'});
+	guideSocket.emit("endguide", {msg:"競技進行の停止: "+scoaArray["競技進行の停止"]["count"]+"回", color:'black'});
+	guideSocket.emit("endguide", {msg:"バンプ: "+scoaArray["バンプ"], color:'black'});
+	guideSocket.emit("endguide", {msg:"チェックポイント: "+scoaArray["チェックポイント"], color:'black'});
+	guideSocket.emit("endguide", {msg:"坂下り: "+scoaArray["坂下り"], color:'black'});
+	guideSocket.emit("endguide", {msg:"坂登り: "+scoaArray["坂登り"], color:'black'});
+	guideSocket.emit("endguide", {msg:"レスキューキット: "+scoaArray["レスキューキット"], color:'black'});
+	guideSocket.emit("endguide", {msg:"被災者: "+scoaArray["被災者"], color:'black'});
+	
+	var riapoint = ((scoaArray["被災者数"]["count"] * 10 + scoaArray["レスキューキット数"]["count"] * 10) - (scoaArray["競技進行の停止"]["count"] * 10));
+
+	if(riapoint > 0) {
+		guideSocket.emit("guide", {msg:"リアイアビリティボーナス: "+riapoint, color:'blue'});
+		guideSocket.emit("guide", {msg:"合計："+scoaArray["合計"]+"→"+(scoaArray["合計"] + riapoint), color:'blue'});
+
+    	scoaArray["合計"] = scoaArray["合計"] + riapoint;
+    	//alert("リアイアビリティボーナス: "+riapoint);
+		$(sumElem).text(scoaArray["合計"]);
+	}
+}
+
+// 脱出ボーナス計算
+if(endStatus == 'completeButton') {
+	
+	var compBonus = (scoaArray["被災者数"]["count"] * 10);
+	guideSocket.emit("guide", {msg:"救出ボーナス: "+compBonus, color:'blue'});
+	guideSocket.emit("guide", {msg:"合計："+scoaArray["合計"]+"→"+(scoaArray["合計"] + compBonus), color:'blue'});
+
+    scoaArray["合計"] = scoaArray["合計"] + compBonus;
+    //alert("救出ボーナス： "+ compBonus);
+    $(sumElem).text(scoaArray["合計"]);
+}
 
 	chatSocket.emit("endGame", scoaArray);//ファイルへ書き出ししてる。
 	guideSocket.emit("info", {'大会名':scoaArray['大会名'], 'チーム名':scoaArray['チーム名'], 'field':scoaArray['field'],'合計':scoaArray['合計']});
@@ -116,7 +173,7 @@ $(document).ready(function() {
 </script>
 
 <table class="table table-striped table-bordered">
-    <thead>
+    <thead class="nowrap">
         <tr>
             <th>項目</th>
             <th>採点</th>

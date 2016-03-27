@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+   <title>RoboCup Jr. RANKING</title>
+
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <meta http-equiv="Content-Style-Type" content="text/css">
+
+   <link rel="stylesheet" type="text/css" href="./css/style.css">
+   <link rel="stylesheet" type="text/css" href="./css/style.css">
+
+   <script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
+   <script type="text/javascript" src="./js/jquery-2.1.3.min.js"></script>
+   <script type="text/javascript" src="./js/score.js"></script>
+
+</head>
+
+<body>
+
+   <ul class="tabs">
+
+      <li>
+
+         <input name="tab" id="tab1" type="radio"/>
+         <label for="tab1">Rescue line</label>
+         <div class="contents tab1">
+
+            <table border="1" class="myTable">
+               <thead>
+                  <tr>
+                     <th>合計</th>
+                     <th>チーム名</th>
+                     <th>field</th>
+                     <th>ドロップタイル 1</th>
+                     <th>ドロップタイル 2</th>
+                     <th>ドロップタイル 3</th>
+                     <th>坂登り</th>
+                     <th>ギャップ</th>
+                     <th>バンプ</th>
+                     <th>障害物</th>
+                     <th>交差点 scoa</th>
+                     <th>交差点 count</th>
+                     <th>被災者救出 scoa</th>
+                     <th>被災者救出 count</th>
+                     <th>競技進行の停止 scoa</th>
+                     <th>競技進行の停止 count</th>
+                     <th>競技時間</th>
+                  </tr>
+               </thead>
+               <tbody class="lineData"></tbody>
+            </table>
+
+         </div>
+
+      </li>
+
+      <li>
+         <input name="tab" id="tab2" type="radio" checked/>
+         <label for="tab2">Rescue meiz</label>
+         <div class="contents tab2">
+
+            <table border="1" class="myTable">
+               <thead>
+                  <tr>
+                     <th>合計</th>
+                     <th>チーム名</th>
+                     <th>field</th>
+                     <th>被災者</th>
+                     <th>坂登り</th>
+                     <th>坂下り</th>
+                     <th>チェックポイント</th>
+                     <th>バンプ</th>
+                     <th>被災者救出 scoa</th>
+                     <th>被災者救出 count</th>
+                     <th>レスキューキット scoa</th>
+                     <th>レスキューキット count</th>
+                     <th>競技進行の停止 scoa</th>
+                     <th>競技進行の停止 count</th>
+                     <th>競技時間</th>
+                  </tr>
+               </thead>
+               <tbody class="meizData"></tbody>
+            </table>
+
+         </div>
+
+      </li>
+
+   </ul>
+
+
+</body>
+</html>

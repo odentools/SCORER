@@ -1,4 +1,4 @@
-/**
+﻿/**
 	RoboCup Jr.SCORER server
 **/
 var express = require('express');
@@ -35,7 +35,7 @@ competIo.sockets.on("connection", function (socket) {
 		gameTime = data;
 		competIo.sockets.emit("time", data);
 	});
-	
+
 });
 
 
@@ -45,24 +45,37 @@ infoIo.sockets.on("connection", function (socket) {
 	// 参加者リスト
 	// ToDo ファイルから読み込む
 	var data = {
-		'大阪電気通信大学　オープン大会 RescueLine':{
-			'index': 'oecu_open_line',
-			'field': 'line',
-			'team':{
-				'DMS-轟(陣)': 'dms-jin',
-				'DMS-閃': 'dms-hirameki',
-				'DMS-翼': 'dms-tubasa'
-			}
-		},'大阪電気通信大学　オープン大会 RescueMeiz(メイズ)':{
-			'index': 'oecu_open_meiz',
+		'ロボカップジャパンオープン2016愛知 RescueMaze(メイズ)':{
+			'index': 'kansai_meiz',
 			'field': 'meiz',
 			'team':{
-				'DMS-空': 'dms-sora',
-				'DMS-侍': 'dms-samurai'
+				'埼玉県立川越高等学校物理部': 'JRM001',
+				'Atlantis': 'JRM002',
+				'しーぼーぐ': 'JRM003',
+				'DMS-空': 'JRM004',
+				'DMS-鷹': 'JRM005',
+				'LINQ': 'JRM006',
+				'中央中等W': 'JRM007',
+				'Oremon Cha-rangers': 'JRM008',
+				'seek': 'JRM009',
+				'聖徳太子１号': 'JRM010',
+				'ＳＵＮ': 'JRM011',
+				'MAC Robot Team': 'JRM012'
 			}
 		}
 	};
 
+	// 競技情報
+	var nowConnection;
+
+	socket.on('nowConnection', function(data) {
+		if (data != null) {
+			nowConnection = data;
+		}
+		socket.emit('nowConnection', nowConnection);
+	});
+
+	// 参加者リスト一覧の取得
 	socket.on("participantList", function () {
 		socket.emit('participantList', data);
 	});
@@ -74,12 +87,22 @@ guide_io.sockets.on("connection", function (socket) {
 
 	console.log("クライアントの接続を確認しました。");
 
+	socket.on("remove", function () {
+		guide_io.emit('remove');
+	});
+
 	socket.on("start", function () {
 		socket.broadcast.emit('clear');
+		guide_io.emit('clear');
 	});
 
 	socket.on("guide", function (data) {
-		socket.broadcast.emit('guide', data);
+		guide_io.emit('guide', data);
+		console.log(data);
+	});
+	
+	socket.on("endguide", function (data) {
+		socket.broadcast.emit('endguide', data);
 		console.log(data);
 	});
 
@@ -98,19 +121,19 @@ scoa_io.sockets.on("connection", function (socket) {
 	socket.on("sumScoa", function (data) {
 		console.log(data);
 	});
-	
+
 	socket.on("scoaData", function (data) {
 		console.log(data);
 	});
-	
+
 	socket.on("endGame", function (data) {
 
 		data['競技時間'] = gameTime.time;
-		
+		scoa_io.sockets.emit("aaaaaaaa", data);
 		console.log(data);
-	
+
 		var char = "";
-		
+
 		// ヘッダー行の出力
 		for (var key in data) {
 			if (data[key]['scoa'] != undefined){
@@ -122,7 +145,7 @@ scoa_io.sockets.on("connection", function (socket) {
 			}
 		}
 		char = char+"\n";
-		
+
 		// スコアの出力
 		for (var key in data) {
 			if (data[key]['scoa'] != undefined){
@@ -152,7 +175,7 @@ var io = require('socket.io').listen(port);
 console.log((new Date()) + " Server is listening on port " + port);
 
 io.sockets.on('connection', function(socket) {
-	
+
 	// 動画の受信
 	socket.on('sendVideo', function(message) {
 
@@ -163,7 +186,11 @@ io.sockets.on('connection', function(socket) {
 	socket.on('message', function(message) {
 		socket.broadcast.emit('message', message);
 	});
-	
+
+	socket.on('video', function(message) {
+		socket.broadcast.emit('video', message);
+	});
+
 	socket.on('disconnect', function() {
 		socket.broadcast.emit('user disconnected');
 	});

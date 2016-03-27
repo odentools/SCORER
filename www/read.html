@@ -1,78 +1,452 @@
 <!DOCTYPE html>
-<html>
-<!------------------- ビデオチャット -------------------->
+<html lang="ja" ng-app="myApp">
 <head>
-    <title>WebRTC 1 to 1 signaling</title>
-    <script type="text/javascript" src="./js/jquery-2.1.3.min.js"></script>
-    <script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="Content-Style-Type" content="text/css">
+	<meta name="viewport" content="width=950, user-scalable=no">
+	<title>RoboCup Jr. SCORER</title>
+
+	<link rel="stylesheet" type="text/css" href="./css/skyblue.min.css">
+	<link rel="stylesheet" type="text/css" href="./css/common.css">
+	<link rel="stylesheet" type="text/css" href="./css/frame.css">
+
+	<script type="text/javascript" src="./js/jquery-2.1.3.min.js"></script>
+	<script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
+
+<style>
+	
+.layarOn {
+    border: 1px solid;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+#mainVideo {
+	height: 100%;
+	width: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+
+#subVideo {
+	height: 35%;
+	width: 35%;
+}
+
+#wrapper {
+    position: relative;
+    width: 100%;
+}
+#wrapper:before {
+    content:"";
+    display: block;
+    padding-top: 75%;
+}
+#content {
+	height: 650px;
+	width: 865px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+canvas {
+	opacity: 0.65;
+}
+
+</style>
+
+<script>
+	
+var gameTime;
+
+var setPoint = function(point) {
+	$('#point').text(point+'点');
+};
+
+var setCarry00 = function(c) {
+	if(c < 10) {
+		return '0'+c;
+	} else {
+		return c;
+	}
+};
+
+var getMsTime = function(sec) {
+	var h = parseInt(sec/3600);
+	var m = parseInt((sec-=(h*3600))/60);
+	var s = parseInt(sec-=(m*60));
+
+	return setCarry00(m)+':'+setCarry00(s);
+};
+
+var setTime = function(sec) {
+	gameTime = sec;
+	$('#playTime').text(getMsTime(sec));
+};
+
+var initPage = function() {
+
+	/* 画面表示を初期パラメータに設定 */
+	// Todo：外部からの値で書き換えること．
+	$('#tournament').text('ロボカップジャパンオープン2016愛知 RescueMaze(メイズ)');
+	$('#teamName').text('現在準備中です');
+	$('#playTime').text('');
+	//$('#adWords').text('RoboCup Jr. SCORER, by Visual Media Labo.');
+	//$('#adWords').text('　　　　　　開発者、募集中です。詳しくは「ht12a092@gmail.com」矢野までご連絡ください。');
+$('#adWords').html("<img style='height: 100%;' src='img/readme.png' />");
+
+	$('#point').text('');
+	
+	$('#progressNote > tr').remove();
+
+	setTime(0);
+
+};
+
+/* ---- */
+
+var SERVER_ADDRESS = location.host.split(":")[0];
+
+var competSocket = io.connect("http://"+SERVER_ADDRESS+":3002");	// 競技情報（時間など）
+var MessageSocket = io.connect("http://"+SERVER_ADDRESS+":8082");	// 採点情報（点数など）
+
+competSocket.on("time", function (data) {
+	setTime(data.time);
+});
+
+MessageSocket.on("guide", function (data) {
+	console.log("read to socket")
+	$('#progressNote').prepend($('<tr>').html('<td>'+getMsTime(gameTime)+'</td><td>'+data.msg+'</td>').css('color',data.color));
+});
+
+MessageSocket.on("endguide", function (data) {
+	$('#progressNote').prepend($('<tr>').html('<td></td><td>'+data.msg+'</td>').css('color',data.color));
+});
+
+MessageSocket.on("info", function (data) {
+
+	$('#tournament').text(data['大会名']);
+	$('#teamName').text(data['チーム名']);
+	// $('#playTime').text('');
+	// $('#adWords').text('RoboCup Jr. SCORER, by Visual Media Labo.');
+	setPoint(data['合計']);
+
+});
+
+MessageSocket.on("clear", function (data) {
+	initPage();
+});
+
+MessageSocket.on("remove", function (data) {
+	$( '#progressNote tr' ).eq( 0 ).remove();
+});
+
+/* ---- */
+
+// main Video
+  var mainVideo;
+  var mainStream = null;
+  var mainpeerConnection = null;
+  var mainpeerStarted = false;
+  var mainmediaConstraints = {'mandatory': {'OfferToReceiveAudio':false, 'OfferToReceiveVideo':true }};
+
+
+// sub video
+
+  var subVideo;
+  var subStream = null;
+  var subpeerConnection = null;
+  var subpeerStarted = false;
+  var submediaConstraints = {'mandatory': {'OfferToReceiveAudio':false, 'OfferToReceiveVideo':true }};
+
+
+// main Video
+  // start local video
+  function mainstartVideo() {
+	navigator.webkitGetUserMedia({video: true, audio: true},
+    function (stream) { // success
+      mainStream = stream;
+      mainVideo.src = window.webkitURL.createObjectURL(stream);
+      mainVideo.play();
+	  mainVideo.volume = 0;
+    },
+    function (error) { // error
+      console.error('An error occurred: [CODE ' + error.code + ']');
+      return;
+    }
+	);
+  }
+
+  // stop local video
+  function mainstopVideo() {
+    mainVideo.src = "";
+    mainStream.mainstop();
+  }
+
+  function mainstop() {
+    mainpeerConnection.close();
+    mainpeerConnection = null;
+    mainpeerStarted = false;
+  }
+
+// sub Video
+  // start local video
+  function substartVideo() {
+	navigator.webkitGetUserMedia({video: true, audio: true},
+    function (stream) { // success
+      subStream = stream;
+      subVideo.src = window.webkitURL.createObjectURL(stream);
+      subVideo.play();
+	  subVideo.volume = 0;
+    },
+    function (error) { // error
+      console.error('An error occurred: [CODE ' + error.code + ']');
+      return;
+    }
+	);
+  }
+
+  // stop local video
+  function substopVideo() {
+    subVideo.src = "";
+    subStream.substop();
+  }
+
+  function substop() {
+    subpeerConnection.close();
+    subpeerConnection = null;
+    subpeerStarted = false;
+  }
+
+
+/* ---- */
+
+
+
+$(document).ready(function() {
+
+	var dragTarget = null;
+	var isDragging = false;
+	var canvasOffset = 9;
+
+	var iconCtx = $("canvas#icon").get(0).getContext('2d');
+
+	var damianImages = [];
+	var damianSrcs = [
+		'./img/bump.png',
+		'./img/bump.png',
+		'./img/bump.png',
+		'./img/bump.png',
+		'./img/checkPointA.png',
+		'./img/checkPointB.png',
+		'./img/checkPointC.png',
+		'./img/checkPointD.png',
+		'./img/human.png',
+		'./img/human.png',
+		'./img/human.png',
+		'./img/human.png',
+		'./img/human.png',
+		'./img/human.png',
+		'./img/human.png',
+		'./img/human.png',		
+	];
+
+	for (var i in damianSrcs) {
+		damianImages[i] = new Image();
+		damianImages[i].src = damianSrcs[i];
+	}
+
+	damianImages[damianImages.length-1].onload = (function(){
+		drawIconImages();
+	});
+
+	var drawIconImages = function() {
+
+		iconCtx.clearRect(0, 0, $('canvas#icon').width(), $('canvas#icon').height());
+
+		var x = -25, y = 605, w = 25, h = 25, dx = 35;
+
+		for (var i in damianImages) {
+			x+=dx;
+			
+			damianImages[i].drawOffsetX = x;
+			damianImages[i].drawOffsetY = y;
+			damianImages[i].drawWidth = w;
+			damianImages[i].drawHeight = h;
+
+			iconCtx.drawImage(damianImages[i], x, y, w, h);
+		}
+
+	};
+	
+	$('canvas').on('touchstart mousedown', function(e) {
+		
+		// タッチパネル用(スクロール防止)
+		e.preventDefault();
+
+		var posX = (e.clientX || e.originalEvent.changedTouches[0].clientX) - canvasOffset;
+		var posY = (e.clientY || e.originalEvent.changedTouches[0].clientY) - canvasOffset-80;
+
+		// ダミアンアイコンのクリック判定
+		for (var i = damianImages.length - 1; i >= 0; i--) {
+
+			if (posX >= damianImages[i].drawOffsetX &&
+				posX <= (damianImages[i].drawOffsetX + damianImages[i].drawWidth) &&
+				posY >= damianImages[i].drawOffsetY &&
+				posY <= (damianImages[i].drawOffsetY + damianImages[i].drawHeight)
+			)
+			{
+				dragTarget = i;
+				isDragging = true;
+				break;
+			}
+		}
+
+		// for chrome
+		return false;
+
+	});
+
+	$('canvas').on('touchend mouseup', function(e) {
+		// タッチパネル用(スクロール防止)
+		e.preventDefault();
+		isDragging = false;
+	});
+
+	$('canvas').on('touchleave mouseleave', function(e) {
+		// タッチパネル用(スクロール防止)
+		e.preventDefault();
+		isDragging = false;
+	});
+
+	$('canvas').on('touchmove mousemove', function(e) {
+		// タッチパネル用(スクロール防止)
+		e.preventDefault();
+		// ドラッグモード
+		if (isDragging) drawDamian(e);
+	});
+
+	function drawDamian(e) {
+
+		iconCtx.clearRect(0, 0, $('canvas#icon').width(), $('canvas#icon').height());
+
+		var posX = (e.clientX || e.originalEvent.changedTouches[0].clientX) - canvasOffset;
+		var posY = (e.clientY || e.originalEvent.changedTouches[0].clientY) - canvasOffset-80;
+
+		// ダミアンアイコン描画
+		var x, y, w, h;
+
+		for (var i in damianImages) {
+
+			if (i == dragTarget) {
+				x = posX - damianImages[i].drawWidth / 2;
+				y = posY - damianImages[i].drawHeight / 2;
+
+				damianImages[i].drawOffsetX = x;
+				damianImages[i].drawOffsetY = y;
+			} else {
+				x = damianImages[i].drawOffsetX;
+				y = damianImages[i].drawOffsetY;
+			}
+
+			w = damianImages[i].drawWidth;
+			h = damianImages[i].drawHeight;
+
+			iconCtx.drawImage(damianImages[i], x, y, w, h);
+
+		}
+	}
+
+
+
+	mainVideo = document.getElementById('mainVideo');
+	subVideo = document.getElementById('subVideo');
+
+	initPage();
+	setTime(0);
+	// setPoint(0);
+
+});
+
+</script>
+
 </head>
-        
-<body>
- <br>
- <br>
-<table>
-    <tr>
-        <td>
-            <!-- ToDo: この辺のCSSを別ファイルに分けたい -->
-            <div id="infobox" style="border-style: dashed;border-width: 1px;width: 800px;border-color: #000;font-size: 28px;"></div>
-            <div id="time" style="border-style: dashed;border-width: 1px;width: 800px;border-color: #000;font-size: 28px;"></div>
-         <!--   <video id="video" autoplay width="800" height="600"></video><br /> -->
- <div>
-<video id="remote-video" autoplay style="width: 800px; height: 600px; border: solid 10px black;"></video>
+
+<body ng-controller="myController">
+
+<!-- ヘッダー -->
+<div id="headerArea">
+	<table class="table colors">
+		<tbody>
+		<tr>
+			<td id="tournament"></td>
+            <td id="playTime" class="timer"></td>
+			<td id="teamName"></td>
+			<td id="point"></td>
+		</tr>
+		</tbody>
+	</table>
 </div>
 
-            <canvas id="canvas" width="800" height="600" style="display: none;"></canvas>
-        </td>
-        <td>
-            <div style="border-style: dashed;border-width: 1px;width: 100%;height: 700px;border-color: #000;font-size: 28px;overflow-y: scroll;">
-                <table id="msgbox" style="border-style: dashed;border-width: 1px;font-size: 28px;"></table>
-            </div>
-        </td>
-    </tr>
-</table>
+<!-- コンテンツ -->
+<div id="contentsArea">
+	
+	<table class="table">
+		<tbody>
+		<tr>
+			<td style="width: 60% !important;">
+				<div id="wrapper">
+					<div id="content">
+						<video id="mainVideo" class="layarOn" autoplay></video>
+						<video id="subVideo" class="layarOn" autoplay></video>
+						
+						<canvas id="icon" width="865px" height="650px" style="position: absolute; z-index: 100;"></canvas>
+					</div>
+				</div>
+			</td>
+			<td>
 
+			<table class="table table-striped table-bordered">
+			<thead class="nowrap">
+				<tr>
+					<th>Time</th>
+					<th>comment</th>
+				</tr>
+			</thead>
+			<tbody id="progressNote"></tbody>
+			</table>
+			</td>
+		</tr>
+		</tbody>
+	</table>
+
+</div>
+
+<!-- フッター -->
+<div id="footerArea">
+	<table class="table colors">
+		<tbody>
+		<tr>
+            <td class="italic" id="adWords"></td>
+        </tr>
+    	</tbody>
+	</table>
+</div>
 
 <textarea id="text-for-send-sdp" rows="5" cols="100" disabled="1" style="display:none;">SDP to send</textarea>
 <textarea id="text-for-send-ice" rows="5" cols="100" disabled="1" style="display:none;">ICE Candidate to send</textarea>
 
-<script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
+</body>
+</html>
+
 
 <script>
-
-// ゲーム時間の記録変数
-var gameTime = "";
-var competIo	= io.connect("http://"+location.host.split(":")[0]+":3002");		// 競技情報（時間など）
-
-var video = document.getElementById('video');
-var localMediaStream = null;
-
-var chatSocket = io.connect("http://"+location.host.split(":")[0]+":8082");
-
-/* ---- */
-
-chatSocket.on("guide", function (data) {
-	console.log(data);
-
-    $('#msgbox').prepend($('<tr>').html("<td style='vertical-align: top !important'>"+gameTime+"</td><td>"+data.msg+"</td>").css('color',data.color));
-});
-
-chatSocket.on("info", function (data) {
-	console.log(data);
-    document.getElementById("infobox").innerHTML=data['大会名']+"<br>"+data['チーム名']+" 現在の得点"+data['合計']+"点";
-});
-
-competIo.on("time", function (data) {
-    document.getElementById("time").innerHTML="競技時間 "+data.time;
-    gameTime=data.time;
-});
-
-
-chatSocket.on("clear", function (data) {
-   $('#msgbox tr').remove();
-});
-
-
-  var remoteVideo = document.getElementById('remote-video');
+  var remoteVideo = document.getElementById('subVideo');
   var localStream = null;
   var peerConnection = null;
   var peerStarted = false;
@@ -87,7 +461,12 @@ chatSocket.on("clear", function (data) {
   
   // socket: channel connected
   socket.on('connect', onOpened)
-        .on('message', onMessage);
+        .on('message', onMessage)
+		.on('video', changevideo);
+
+function changevideo(data) {
+	substartVideo();
+}
 
   function onOpened(evt) {
     console.log('socket opened.');
@@ -280,17 +659,3 @@ chatSocket.on("clear", function (data) {
   }
 
   </script>
-  
-<style>
-
-	.btns {
- 		top: 20px;
-		display:inline-block;
-		font-size: 120%;
-		width: 80px;
-		height: 50px;
-	}
-
-</style>
-</body>
-</html>

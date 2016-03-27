@@ -23,10 +23,19 @@
 <textarea id="text-for-send-sdp" rows="5" cols="100" disabled="1" style="display:none;">SDP to send</textarea>
 <textarea id="text-for-send-ice" rows="5" cols="100" disabled="1" style="display:none;">ICE Candidate to send</textarea>
 
+<div id="result"></div>
+<video id="myVideo" autoplay="1" ></video>
+<button id="changeButton">カメラ切り替え</button>
+<h3>使用カメラID</h3>
+<div id="result_use"></div>
+
+
 <script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
 
 <script>
 
+      //カメラを取得・切り替える
+      var cnt = 0;
   var localVideo = document.getElementById('local-video');
   var remoteVideo = document.getElementById('remote-video');
   var localStream = null;
@@ -150,18 +159,69 @@ function video(){
   // ---------------------- video handling -----------------------
   // start local video
   function startVideo() {
-	navigator.webkitGetUserMedia({video: true, audio: true},
-    function (stream) { // success
-      localStream = stream;
-      localVideo.src = window.webkitURL.createObjectURL(stream);
-      localVideo.play();
-	  localVideo.volume = 0;
-    },
-    function (error) { // error
-      console.error('An error occurred: [CODE ' + error.code + ']');
-      return;
-    }
-	);
+	  
+	  
+	        //カメラの情報を取得
+      var cameraData = [];
+      MediaStreamTrack.getSources(function(data){
+
+        //カメラ情報を取得して、出力する
+        var strCamera = "";
+        var len = data.length;
+        for( var i = 0 ; i < len ; i ++ ){
+          strCamera += "<p>種類："+ data[i].kind+"<br/>ID："+ data[i].id+"</p>";
+          if( data[i].kind == "video" ){
+            cameraData.push(data[i]);
+          }
+        }
+        if( cameraData.length == 0 ){
+          alert("カメラが見つかりません");
+          return;
+        }
+		
+		  $("#result").html( strCamera );
+
+
+        //カメラを順番に切り替える
+        cnt++;
+        if( cnt == cameraData.length ){
+          cnt = 0;
+        }
+
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || window.navigator.mozGetUserMedia;
+        window.URL = window.URL || window.webkitURL;
+
+        //カメラ再生中の場合は切り替えのため、一旦停止する
+        if( localStream ){
+          localStream.stop();
+        }
+
+        //カメラをIDを使用して取得する
+        navigator.getUserMedia(
+          {
+            video: {
+              optional: [{sourceId: cameraData[cnt].id }] //カメラIDを直接指定する
+            },
+            audio: false
+          },
+          function(stream) {
+
+            //切り替え時にカメラを停止するため、情報を保存しておく
+            localStream = stream;
+
+            $("#result_use").html( cameraData[cnt].id );
+
+            //カメラをvideoに結びつける
+            localVideo.src = window.URL.createObjectURL(stream);
+
+          },
+          function(err) {
+            //エラー処理
+          }
+        );
+      });
+	  
+
   }
 
   // stop local video
@@ -268,6 +328,25 @@ function video(){
     peerConnection = null;
     peerStarted = false;
   }
+
+
+
+/* */
+$(function(){
+
+
+      function setCamera(){
+
+
+      }
+
+      //カメラ切り替えボタンクリックイベント
+      $("#changeButton").bind("click",function(){
+        setCamera();
+      });
+
+
+    });
 
   </script>
   

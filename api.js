@@ -4,10 +4,13 @@
 'use strict';
 
 var express = require('express'),
-	bodyParser = require('body-parser');
+	bodyParser = require('body-parser'),
+		cors = require('cors');
 
 var app = express();
 app.use(bodyParser.json());
+app.use(cors());
+app.use(express.static('www'));
 
 // ルート
 app.get('/', function (req, res) {

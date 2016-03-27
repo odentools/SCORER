@@ -1,3 +1,18 @@
+/***********************
+ * 全般共通jsファイルguide
+ ***********************/
+
+/* サーバのホストアドレスを取得 */
+var getServerAddress = function() {
+	return location.host.split(":")[0];
+};
+
+
+
+/* ------------------ */
+
+
+
 // サーバーのホストアドレスを取得する
 var SERVER_ADDRESS = location.host.split(":")[0];
 
@@ -35,22 +50,22 @@ var itemArray = {
 		3:{'ドロップタイル3':{"1回目":60,"2回目":40,"3回目":20}},
 		4:{'坂登り':{"1回目":30,"2回目":20,"3回目":10}},
 		5:{'ギャップ':{"1":10,"2":10,"3":10}},
-		6:{'バンプ':{"1":5,"2":5}},
+/*		6:{'バンプ':{"1":5,"2":5}},*/
 		7:{'障害物':{"1":10}},
 		8:{'カウント':{"交差点":15}},
 		9:{'カウント':{"被災者救出":40}},
 		10:{'カウント':{"競技進行の停止":0}} // カウントの場合は連想配列は絶対1つにする事.
 	},
 	'meiz':{
-		1:{'被災者':{"A":25, "B":10, "C":10, "D":10, "E":10, "F":25, "G":10, "H":10}},
-		2:{'レスキューキット':{"A":10, "B":10, "C":10, "D":10, "E":10, "F":10, "G":10, "H":10}},
+		1:{'被災者':{"A":10, "B":10, "C":10, "D":10, "E":10, "F":25,"G":25,"H":25}},
+		2:{'レスキューキット':{"A":10, "B":10, "C":10, "D":10, "E":10, "F":10,"G":10, "H":10}},
 		3:{'坂登り':{"1":20}},
 		4:{'坂下り':{"1":10}},
-		5:{'チェックポイント':{"1":10, "2":10, "3":10}},
-		6:{'バンプ':{"1":5,"2":5,"3":5}},
-		7:{'カウント':{"被災者数":0}},
-		8:{'カウント':{"レスキューキット数":0}},
-		9:{'カウント':{"競技進行の停止":0}}
+		5:{'チェックポイント':{"a":10, "b":10, "c":10}},
+		7:{'バンプ':{"①":5,"②":5,"③":5,"④":5}},
+		8:{'カウント':{"被災者数":0}},
+		9:{'カウント':{"レスキューキット数":0}},
+		10:{'カウント':{"競技進行の停止":0}}
 	}
 };
 
@@ -184,18 +199,18 @@ var makeCountHTML = function(gradingList) {
 		console.log(rescueId);
 		
 
-		code = "<tr><td>"+i+"</td><td>";
+		code = "<tr><td class='nowrap'>"+i+"</td><td>";
 
-		code = code+"<table class='innerTable'><tr>";
+		code = code+"<table class='inner'><tr>";
 	
-		code = code+"<td class='innerTd'><a onclick='addCount(this, 0);' class='btn btn-empty btn-success' id='"+getUniqueId()+"' value='"+j+"'>＋</a></td>";
-		code = code+"<td class='innerTd'>回数 <span class='countBold'>0<span></td>";
-		code = code+"<td class='innerTd'><a onclick='addCount(this, 1);' class='btn btn-empty btn-warning' id='"+getUniqueId()+"' value='"+j+"'>－</a></td>";
+		code = code+"<td><a onclick='addCount(this, 0);' class='btn btn-empty btn-success' id='"+getUniqueId()+"' value='"+j+"'>＋</a></td>";
+		code = code+"<td>回数 <span class='countBold'>0<span></td>";
+		code = code+"<td><a onclick='addCount(this, 1);' class='btn btn-empty btn-warning' id='"+getUniqueId()+"' value='"+j+"'>－</a></td>";
 
 		code = code+"</tr></table>";
 
 		// 初期点数を指定
-		code = code+"</td><td>0</td></tr>";
+		code = code+"</td><td class='nowrap'>0</td></tr>";
 
 	});
 
@@ -207,26 +222,30 @@ var makeCountHTML = function(gradingList) {
  * フッターHTMLの生成
  */
 var makeSumHTML = function() {
-	var code = "<tr><td>合計</td><td>";
+	var code = "<tr><td class='nowrap'>合計</td><td>";
 	
 	//開始、終了、リタイア、失格
 	code = code+"<a class='btn btn-light' data-btn='exitButton'>終了<a>";
 	code = code+"<a class='btn btn-light' data-btn='retireButton'>リタイア<a>";
-	//code = code+"<a class='btn btn-light'>失格<a>";
-	code = code+"</td><td id='sum'>0</td></tr>";
+	code = code+"<a class='btn btn-light' data-btn='completeButton'>脱出<a>";
+	code = code+"<a class='btn btn-light' data-btn='clearMonitor'>画面クリア<a>";
+	code = code+"<a class='btn btn-light' data-btn='remove'>案内消し<a>";
+	code = code+"<a class='btn btn-light' data-btn='save'>*保存<a>";
+	
+	code = code+"</td><td class='nowrap' id='sum'>0</td></tr>";
 	return code;
 };
 
 var makeButtonHTML = function(itemName, gradingList) {
 
-	var code = "<tr><td>"+itemName+"</td><td>";
+	var code = "<tr><td class='nowrap'>"+itemName+"</td><td>";
 	
 	$.each( gradingList, function(i, j){
 		code = code+"<a onclick='openControl(this);' class='btn btn-light' id='"+getUniqueId()+"' value='"+j+"'>"+i+"</a>";
 	});
 
 	// 初期点数を指定
-	code = code+"</td><td>0</td></tr>";
+	code = code+"</td><td class='nowrap'>0</td></tr>";
 
 	return code;
 };
