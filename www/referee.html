@@ -68,7 +68,7 @@ var viewNowSec = function() {
     competIo.emit("time", {time: (gameCountTime)});
 
 	// 競技時間8:00になった場合
-	if(gameCountTime > 60*8) {
+	if(gameCountTime >= 60*8) {
 	    clearInterval(timeInterval);
 	}
 
