@@ -22,9 +22,9 @@
 
 <script type="text/javascript">
 
-var gameTime=0;	// ゲーム時間の記録変数
-var timeInterval;		// インターバル変数
-var endStatus;			// 終了状態の記録変数
+var gameTime;		// ゲーム時間の記録変数
+var timeInterval;	// インターバル変数
+var endStatus;		// 終了状態の記録変数
 
 
 /* ---- */
@@ -74,13 +74,27 @@ var viewNowTime = function() {
 
 };
 
+/**
+ * ゲームの開始処理
+ */
+var startGame = function() {
+
+	// 競技時間の初期化
+	gameTime = 0;
+
+	// タイマーの初期化と設定
+	clearInterval(timeInterval);
+    timeInterval = setInterval("viewNowTime()",1000);
+	
+};
+
+
+/* ---- */
+
 
 $(document).ready(function() {
 
-    clearInterval(timeInterval);
-
-    // ゲーム時間のカウント開始
-    timeInterval = setInterval("viewNowTime()",1000);
+	startGame();
 
     // Buttonの各イベント処理
     $('.btn').on('click', function() {
