@@ -22,7 +22,7 @@
 
 <script type="text/javascript">
 
-var gameCountTime=0;	// ゲーム時間の記録変数
+var gameTime=0;	// ゲーム時間の記録変数
 var timeInterval;		// インターバル変数
 var endStatus;			// 終了状態の記録変数
 
@@ -58,17 +58,17 @@ var getMsTime = function(sec) {
 /**
  * ゲームの経過時刻を描画する
  */
-var viewNowSec = function() {
+var viewNowTime = function() {
 	
-    gameCountTime++;
+    gameTime++;
 
-    $('#playTime', parent.document).text(getMsTime(gameCountTime));
+    $('#playTime', parent.document).text(getMsTime(gameTime));
 
     // ToDo: 複数での審判に備えてチーム名を付随させる。
-    competIo.emit("time", {time: (gameCountTime)});
+    competIo.emit("time", {time: (gameTime)});
 
 	// 競技時間8:00になった場合
-	if(gameCountTime >= 60*8) {
+	if(gameTime >= 60*8) {
 	    clearInterval(timeInterval);
 	}
 
@@ -80,7 +80,7 @@ $(document).ready(function() {
     clearInterval(timeInterval);
 
     // ゲーム時間のカウント開始
-    timeInterval = setInterval("viewNowSec()",1000);
+    timeInterval = setInterval("viewNowTime()",1000);
 
     // Buttonの各イベント処理
     $('.btn').on('click', function() {
