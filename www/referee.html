@@ -89,6 +89,65 @@ var startGame = function() {
 };
 
 
+/**
+ * ゲーム終了処理
+ */
+var endGame = function() {
+	
+	// ゲーム時間の計測を停止
+	clearInterval(timeInterval);
+	
+	// 確認パネルを閉じる
+	$('#exitPanel').dialog('close');
+
+	var sumElem = document.getElementById("sum");
+
+	// スコアをガイドとして表示
+	guideSocket.emit("endguide", {msg:"合計: "+scoaArray["合計"], color:'black'});
+	guideSocket.emit("endguide", {msg:"競技進行の停止: "+scoaArray["競技進行の停止"]["count"]+"回", color:'black'});
+	guideSocket.emit("endguide", {msg:"バンプ: "+scoaArray["バンプ"], color:'black'});
+	guideSocket.emit("endguide", {msg:"チェックポイント: "+scoaArray["チェックポイント"], color:'black'});
+	guideSocket.emit("endguide", {msg:"坂下り: "+scoaArray["坂下り"], color:'black'});
+	guideSocket.emit("endguide", {msg:"坂登り: "+scoaArray["坂登り"], color:'black'});
+	guideSocket.emit("endguide", {msg:"レスキューキット: "+scoaArray["レスキューキット"], color:'black'});
+	guideSocket.emit("endguide", {msg:"被災者: "+scoaArray["被災者"], color:'black'});
+
+	// リライアビリティーボーナスの計算処理
+	if(endStatus == 'retireButton'|| endStatus == 'exitButton' || endStatus == 'completeButton') {
+	
+		var riapoint = ((scoaArray["被災者数"]["count"] * 10 + scoaArray["レスキューキット数"]["count"] * 10) - (scoaArray["競技進行の停止"]["count"] * 10));
+
+		if(riapoint > 0) {
+			guideSocket.emit("guide", {msg:"リアイアビリティボーナス: "+riapoint, color:'blue'});
+			guideSocket.emit("guide", {msg:"合計："+scoaArray["合計"]+"→"+(scoaArray["合計"] + riapoint), color:'blue'});
+
+	    	scoaArray["合計"] = scoaArray["合計"] + riapoint;
+    		//alert("リアイアビリティボーナス: "+riapoint);
+			$(sumElem).text(scoaArray["合計"]);
+		}
+	}
+
+	// 脱出ボーナス計算
+	if(endStatus == 'completeButton') {
+
+		var compBonus = (scoaArray["被災者数"]["count"] * 10);
+		guideSocket.emit("guide", {msg:"救出ボーナス: "+compBonus, color:'blue'});
+		guideSocket.emit("guide", {msg:"合計："+scoaArray["合計"]+"→"+(scoaArray["合計"] + compBonus), color:'blue'});
+
+	    scoaArray["合計"] = scoaArray["合計"] + compBonus;
+		//alert("救出ボーナス： "+ compBonus);
+		$(sumElem).text(scoaArray["合計"]);
+	}
+
+	chatSocket.emit("endGame", scoaArray);//ファイルへ書き出ししてる。
+	guideSocket.emit("info", {'大会名':scoaArray['大会名'], 'チーム名':scoaArray['チーム名'], 'field':scoaArray['field'],'合計':scoaArray['合計']});
+
+	guideSocket.emit("exit");
+
+    // スコア確認ページ（サインとか）に遷移
+};
+
+
 /* ---- */
 
 
@@ -124,60 +183,7 @@ $(document).ready(function() {
 
             // ゲーム終了確定
             case 'exitConfirmed':
-            
-                // ゲーム時間の計測を停止
-                clearInterval(timeInterval);
-                
-                $('#exitPanel').dialog('close'); // 確認パネルを閉じる
-
-// 特例処理
-// リアイアビリティボーナス
-
-var sumElem = document.getElementById("sum");
-
-if(endStatus == 'retireButton'|| endStatus == 'exitButton' || endStatus == 'completeButton') {
-	console.log(scoaArray);
-	// スコアをガイドとして表示
-	guideSocket.emit("endguide", {msg:"合計: "+scoaArray["合計"], color:'black'});
-	guideSocket.emit("endguide", {msg:"競技進行の停止: "+scoaArray["競技進行の停止"]["count"]+"回", color:'black'});
-	guideSocket.emit("endguide", {msg:"バンプ: "+scoaArray["バンプ"], color:'black'});
-	guideSocket.emit("endguide", {msg:"チェックポイント: "+scoaArray["チェックポイント"], color:'black'});
-	guideSocket.emit("endguide", {msg:"坂下り: "+scoaArray["坂下り"], color:'black'});
-	guideSocket.emit("endguide", {msg:"坂登り: "+scoaArray["坂登り"], color:'black'});
-	guideSocket.emit("endguide", {msg:"レスキューキット: "+scoaArray["レスキューキット"], color:'black'});
-	guideSocket.emit("endguide", {msg:"被災者: "+scoaArray["被災者"], color:'black'});
-	
-	var riapoint = ((scoaArray["被災者数"]["count"] * 10 + scoaArray["レスキューキット数"]["count"] * 10) - (scoaArray["競技進行の停止"]["count"] * 10));
-
-	if(riapoint > 0) {
-		guideSocket.emit("guide", {msg:"リアイアビリティボーナス: "+riapoint, color:'blue'});
-		guideSocket.emit("guide", {msg:"合計："+scoaArray["合計"]+"→"+(scoaArray["合計"] + riapoint), color:'blue'});
-
-    	scoaArray["合計"] = scoaArray["合計"] + riapoint;
-    	//alert("リアイアビリティボーナス: "+riapoint);
-		$(sumElem).text(scoaArray["合計"]);
-	}
-}
-
-// 脱出ボーナス計算
-if(endStatus == 'completeButton') {
-	
-	var compBonus = (scoaArray["被災者数"]["count"] * 10);
-	guideSocket.emit("guide", {msg:"救出ボーナス: "+compBonus, color:'blue'});
-	guideSocket.emit("guide", {msg:"合計："+scoaArray["合計"]+"→"+(scoaArray["合計"] + compBonus), color:'blue'});
-
-    scoaArray["合計"] = scoaArray["合計"] + compBonus;
-    //alert("救出ボーナス： "+ compBonus);
-    $(sumElem).text(scoaArray["合計"]);
-}
-
-	chatSocket.emit("endGame", scoaArray);//ファイルへ書き出ししてる。
-	guideSocket.emit("info", {'大会名':scoaArray['大会名'], 'チーム名':scoaArray['チーム名'], 'field':scoaArray['field'],'合計':scoaArray['合計']});
-
-	guideSocket.emit("exit");
-    
-    // スコア確認ページ（サインとか）に遷移
-
+            	endGame();
             break;
         }
 
