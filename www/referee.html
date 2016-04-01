@@ -73,6 +73,7 @@ var viewNowTime = function() {
 
 };
 
+
 /**
  * ゲームの開始処理
  */
@@ -95,13 +96,15 @@ $(document).ready(function() {
 
 	startGame();
 
-    // Buttonの各イベント処理
-    $('.btn').on('click', function() {
-        
-        switch($(this).data('btn')) {
+	// Buttonの各イベント処理
+	$('.btn').on('click', function() {
+
+		switch($(this).data('btn')) {
+			case 'cancelComment':	// コメントの取り消し
 			case 'remove':
 				guideSocket.emit("remove");
 				break;
+			case 'reSave':			// 再保存
 			case 'save':
 				scoaArray['チーム名']='[*]'+scoaArray['チーム名'];
 				chatSocket.emit("endGame", scoaArray);//ファイルへ書き出ししてる。
@@ -109,6 +112,7 @@ $(document).ready(function() {
 				guideSocket.emit("exit");
 				break;
 			case 'clearMonitor':
+			case 'initMonitor':		// 画面を初期状態に遷移
 				guideSocket.emit("start");
 				break;
             case 'retireButton':    // リタイアボタン
