@@ -409,15 +409,11 @@ var addCount = function(elem, allowance) {
 
 
 /* -- -- */
+
 chatSocket.on("connect", function () {
 	console.log("サーバに接続しました。");
 });
 
-/*
-chatSocket.on("message", function (message) {
-	console.log(message);
-});
-*/
 
 $(document).ready(function() {
 
