@@ -1,5 +1,5 @@
 /***********************
- * 全般共通jsファイルguide
+ * 競技審判jsファイル
  ***********************/
 
 /* サーバのホストアドレスを取得 */
@@ -8,25 +8,20 @@ var getServerAddress = function() {
 };
 
 
+/* ------------------ */
+
+
+// サーバーのホストアドレスを取得
+var SERVER_ADDRESS = getServerAddress();
+
 
 /* ------------------ */
 
 
-
-// サーバーのホストアドレスを取得する
-var SERVER_ADDRESS = location.host.split(":")[0];
-
 // Socket.IO Serverに接続する
 var chatSocket = io.connect("http://"+SERVER_ADDRESS+":8081");
 var guideSocket = io.connect("http://"+SERVER_ADDRESS+":8082");
-
-
-
-
 var competIo	= io.connect("http://"+SERVER_ADDRESS+":3002");		// 競技情報（時間など）
-
-
-
 
 
 // 現在コントローラで開いているボタン
@@ -73,6 +68,7 @@ var itemArray = {
 var scoaArray;
 
 var uniqueIdNumber = 0;
+
 
 /* ---- */
 
