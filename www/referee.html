@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" ng-app="myApp">
 
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -15,6 +15,8 @@
 	<script type="text/javascript" src="./js/jquery-2.1.3.min.js"></script>
 	<script type="text/javascript" src="./js/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="./js/socket.io-1.3.5.js"></script>
+	<script type="text/javascript" src="./js/angular.min.js"></script>
+	<script type="text/javascript" src="./js/angular-route.min.js"></script>
 	<script type="text/javascript" src="./js/referee.js"></script>
 </head>
 
@@ -202,7 +204,12 @@ $(document).ready(function() {
 				<th>点数</th>
 			</tr>
 		</thead>
-		<tbody id="scoaTable">
+		<tbody id="scoaTable" ng-controller="myCtrl">
+			<tr ng-repeat="line in Scoresheets">
+				<td>{{line.label}}</td>
+				<td>{{line.dom}}</td>
+				<td>{{line.subtotal}}</td>
+			</tr>
 		</tbody>
 	</table>
 

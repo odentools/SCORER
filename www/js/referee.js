@@ -17,6 +17,18 @@ var SERVER_ADDRESS = getServerAddress();
 
 /* ------------------ */
 
+var myApp = angular.module("myApp",[]);
+
+myApp.controller("myCtrl", function($scope){
+	$scope.Scoresheets = [
+		{ label: "被災者", dom: "", subtotal: 0},
+		{ label: "レスキューキット", dom: "", subtotal: 0}
+	];
+
+});
+
+
+/* ------------------ */
 
 // Socket.IO Serverに接続する
 var chatSocket = io.connect("http://"+SERVER_ADDRESS+":8081");
