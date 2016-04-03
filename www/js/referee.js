@@ -21,9 +21,40 @@ var myApp = angular.module("myApp",[]);
 
 myApp.controller("myCtrl", function($scope){
 	$scope.Scoresheets = [
-		{ label: "被災者", dom: "", subtotal: 0},
-		{ label: "レスキューキット", dom: "", subtotal: 0}
+		{ label: "被災者", type: "button", total: 0},
+		{ label: "レスキューキット", type: "count", count: 0, unit: 0, total: 0}
 	];
+
+	$scope.addCount = function(index) {
+		$scope.Scoresheets[index].count++;
+		$scope.Scoresheets[index].total = $scope.Scoresheets[index].unit * $scope.Scoresheets[index].count;
+	};
+
+	$scope.subtractCount = function(index) {
+		if($scope.Scoresheets[index].count > 0) {
+			$scope.Scoresheets[index].count--;
+			$scope.Scoresheets[index].total = $scope.Scoresheets[index].unit * $scope.Scoresheets[index].count;
+		}
+	};
+
+/*
+	chatSocket.emit("scoaData", {team:scoaArray['チーム名'], itemId:itemId, allowance:allowance, unit:point, scoa:scoa, count:count});
+	chatSocket.emit("sumScoa", {team:scoaArray['チーム名'], sumScoa:sumScoa});
+	
+	if($(parent).parent().parent().parent().parent().prev().text() == '競技進行の停止') {
+		guideSocket.emit("guide", {msg:"競技進行の停止"+count+"回目です。", color:'red'});
+	} else if(allowance == 0) {
+		if(point>0) {
+			guideSocket.emit("guide", {msg:$(parent).parent().parent().parent().parent().prev().text()+" "+count+"回目です。追加"+point+"点です。", color:'blue'});
+		}
+	}
+	guideSocket.emit("info", {'大会名':scoaArray['大会名'], 'チーム名':scoaArray['チーム名'], 'field':scoaArray['field'],'合計':scoaArray['合計']});
+
+*/
+
+	$scope.$watch('Scoresheets', function() {
+		// Todo: 小計から合計を再計算
+	}, true);
 
 });
 
@@ -163,7 +194,7 @@ var addLines = function(array) {
 		$.each( list, function(itemName, gradingList){
 			// カウント用の処理
 			if (itemName == 'カウント') {
-				$('#scoaTable').append(makeCountHTML(gradingList));
+
 			} else {
 				$('#scoaTable').append(makeButtonHTML(itemName, gradingList));
 			}
@@ -182,49 +213,6 @@ var getAssociationLength = function(array) {
 	return count;
 };
 
-var makeCountHTML = function(gradingList) {
-
-	// カウントの場合は連想配列は絶対1つにする事.
-	if (getAssociationLength(gradingList) != 1) {
-		return "<tr><td></td><td>項目設定の構文エラーです。<br>カウントの場合は連想配列を1つにして下さい。</td><td></td></tr>";
-	}
-
-	var code;
-
-	$.each( gradingList, function(i, j){
-		
-		if (i=='競技進行の停止') {
-			stopOfTheCompetitionProgressId = "scoringItem_" + uniqueIdNumber;
-		}
-		
-		if (i=='被災者数') {
-			rescueId = "scoringItem_" + uniqueIdNumber;
-		}
-		
-		if (i=='レスキューキット数') {
-			rescueKitId = "scoringItem_" + uniqueIdNumber;
-		}
-		console.log(rescueId);
-		
-
-		code = "<tr><td class='nowrap'>"+i+"</td><td>";
-
-		code = code+"<table class='inner'><tr>";
-	
-		code = code+"<td><a onclick='addCount(this, 0);' class='btn btn-empty btn-success' id='"+getUniqueId()+"' value='"+j+"'>＋</a></td>";
-		code = code+"<td>回数 <span class='countBold'>0<span></td>";
-		code = code+"<td><a onclick='addCount(this, 1);' class='btn btn-empty btn-warning' id='"+getUniqueId()+"' value='"+j+"'>－</a></td>";
-
-		code = code+"</tr></table>";
-
-		// 初期点数を指定
-		code = code+"</td><td class='nowrap'>0</td></tr>";
-
-	});
-
-	return code;
-
-};
 
 /**
  * フッターHTMLの生成
@@ -354,67 +342,6 @@ var control = function(status) {
 		case 'error':
 			guideSocket.emit("guide", {msg:$(parent).prev().text()+"の失敗です。", color:'red'});
 			break;
-	}
-	guideSocket.emit("info", {'大会名':scoaArray['大会名'], 'チーム名':scoaArray['チーム名'], 'field':scoaArray['field'],'合計':scoaArray['合計']});
-};
-
-var addCount = function(elem, allowance) {
-
-	var count, oldcount;
-
-	// 合計点数の取得
-	var sumElem = document.getElementById("sum");
-	var sumScoa = parseInt($(sumElem).text());	
-
-	// 親要素を取得
-	var parent = elem.parentNode;
-	
-	// 項目に設定されている値を取得
-	var point = parseInt($(elem).attr("value"));
-
-	switch(allowance) {
-		case 0:	// 左のボタン
-			// 右の要素（点数）を取得
-			oldcount = count = parseInt($(parent).next().children("span").text());
-			count++;
-			$(parent).next().children("span").text(count);
-			break;
-		case 1:	// 右のボタン
-			// 左の要素（点数）を取得
-			oldcount = count = parseInt($(parent).prev().children("span").text());
-			// 負のカウントを防止
-			if (count > 0) {
-				count--;
-				$(parent).prev().children("span").text(count);
-			}
-		break;
-	}
-	
-	var scoa = point*count;
-
-	// 点数の設定
-	$(parent).parent().parent().parent().parent().next().text(scoa);
-	scoaArray[$(parent).parent().parent().parent().parent().prev().text()] = {scoa:scoa, count:count};// これは上とフォーマット合してね
-
-	sumScoa = sumScoa - point*oldcount;
-	sumScoa = sumScoa + scoa;
-
-	// 合計点数の設定
-	$(sumElem).text(sumScoa);
-	scoaArray['合計'] = sumScoa;
-
-	var itemId = $(elem).attr("id");
-	chatSocket.emit("scoaData", {team:scoaArray['チーム名'], itemId:itemId, allowance:allowance, unit:point, scoa:scoa, count:count});
-	chatSocket.emit("sumScoa", {team:scoaArray['チーム名'], sumScoa:sumScoa});
-
-	/* ---- */
-	
-	if($(parent).parent().parent().parent().parent().prev().text() == '競技進行の停止') {
-		guideSocket.emit("guide", {msg:"競技進行の停止のカウント、"+count+"回目です。", color:'red'});
-	} else if(allowance == 0) {
-		if(point>0) {
-			guideSocket.emit("guide", {msg:$(parent).parent().parent().parent().parent().prev().text()+" "+count+"回目です。追加"+point+"点です。", color:'blue'});
-		}
 	}
 	guideSocket.emit("info", {'大会名':scoaArray['大会名'], 'チーム名':scoaArray['チーム名'], 'field':scoaArray['field'],'合計':scoaArray['合計']});
 };

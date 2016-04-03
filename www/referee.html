@@ -206,9 +206,27 @@ $(document).ready(function() {
 		</thead>
 		<tbody id="scoaTable" ng-controller="myCtrl">
 			<tr ng-repeat="line in Scoresheets">
-				<td>{{line.label}}</td>
-				<td>{{line.dom}}</td>
-				<td>{{line.subtotal}}</td>
+				<td class='nowrap'>{{line.label}}</td>
+				<td>
+					<div ng-if="line.type == 'button'">
+						button
+					</div>
+
+					<table class='inner' ng-if="line.type == 'count'">
+						<tr>
+							<td>
+								<a class='btn btn-empty btn-success' ng-click="addCount($index)">＋</a>
+							</td>
+							<td>
+								回数 <span class='countBold'>{{line.count}}<span>
+							</td>
+							<td>
+								<a class='btn btn-empty btn-warning' ng-click="subtractCount($index)">－</a>
+							</td>
+						</tr>
+					</table>
+				</td>
+				<td class='nowrap'>{{line.total}}</td>
 			</tr>
 		</tbody>
 	</table>
