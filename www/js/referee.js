@@ -20,21 +20,80 @@ var SERVER_ADDRESS = getServerAddress();
 var myApp = angular.module("myApp",[]);
 
 myApp.controller("myCtrl", function($scope){
+
 	$scope.Scoresheets = [
-		{ label: "被災者", type: "button", total: 0},
-		{ label: "レスキューキット", type: "count", count: 0, unit: 0, total: 0}
+		{
+			label: "被災者",
+			type: "button",
+			btn: [
+				{name: "A", point: 15, is: false},
+				{name: "B", point: 15, is: false},
+				{name: "C", point: 15, is: false},
+				{name: "D", point: 15, is: false},
+				{name: "E", point: 15, is: false},
+				{name: "F", point: 15, is: false},
+				{name: "G", point: 15, is: false},
+				{name: "H", point: 15, is: false}
+			],
+			total: 0
+		},
+		{
+			label: "レスキューキット",
+			type: "count",
+			count: 0,
+			unit: 10,
+			total: 0
+		},
+		{
+			label: "レスキューキット",
+			type: "count",
+			count: 0,
+			unit: 10,
+			total: 0
+		}
 	];
 
-	$scope.addCount = function(index) {
-		$scope.Scoresheets[index].count++;
-		$scope.Scoresheets[index].total = $scope.Scoresheets[index].unit * $scope.Scoresheets[index].count;
+	$scope.addCount = function() {
+		var ss = $scope.Scoresheets;
+		var index = this.$parent.$index;
+		ss[index].count++;
+		ss[index].total = ss[index].unit * ss[index].count;
+
+		// ブロードキャストで再計算
+
 	};
 
-	$scope.subtractCount = function(index) {
-		if($scope.Scoresheets[index].count > 0) {
-			$scope.Scoresheets[index].count--;
-			$scope.Scoresheets[index].total = $scope.Scoresheets[index].unit * $scope.Scoresheets[index].count;
+	$scope.subtractCount = function() {
+		var ss = $scope.Scoresheets;
+		var index = this.$parent.$index;
+		if(ss[index].count > 0) {
+			ss[index].count--;
+			ss[index].total = ss[index].unit * ss[index].count;
 		}
+
+		// ブロードキャストで再計算
+
+	};
+
+	$scope.clickButton = function() {
+		var ss = $scope.Scoresheets;
+		var row = this.$parent.$parent.$index;
+		var col = this.$parent.$index;
+
+		ss[row].btn[col].is = !ss[row].btn[col].is;
+		
+		// CSSを変更
+		
+		// トータルを再計算
+		var total = 0;
+		$.each( ss[row].btn, function(i, btn) {
+			if(btn.is) total += btn.point;
+		});
+		
+		ss[row].total = total;
+
+		// ブロードキャストで再計算
+		
 	};
 
 /*

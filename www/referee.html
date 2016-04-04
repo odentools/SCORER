@@ -208,20 +208,20 @@ $(document).ready(function() {
 			<tr ng-repeat="line in Scoresheets">
 				<td class='nowrap'>{{line.label}}</td>
 				<td>
-					<div ng-if="line.type == 'button'">
-						button
-					</div>
+					<!-- ボタン -->
+					<a class='btn btn-light' ng-if="line.type == 'button'" ng-repeat="btn in line.btn" ng-click="clickButton()">{{btn.name}}</a>
 
+					<!-- カウント -->
 					<table class='inner' ng-if="line.type == 'count'">
 						<tr>
 							<td>
-								<a class='btn btn-empty btn-success' ng-click="addCount($index)">＋</a>
+								<a class='btn btn-empty btn-success' ng-click="addCount()">＋</a>
 							</td>
 							<td>
 								回数 <span class='countBold'>{{line.count}}<span>
 							</td>
 							<td>
-								<a class='btn btn-empty btn-warning' ng-click="subtractCount($index)">－</a>
+								<a class='btn btn-empty btn-warning' ng-click="subtractCount()">－</a>
 							</td>
 						</tr>
 					</table>
